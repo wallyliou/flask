@@ -42,7 +42,53 @@ def index():
     link += "<a href=/spider>爬取子青老師本學期課程</a><hr>"
     link += "<a href=/movie1>爬取即將上映電影</a><hr>"
     link += "<a href=/spidermovie>讀取開眼電影即將上映影片，寫入Firestore</a><hr>"
+    link += "<a href=/searchmovie>查詢資料庫符合電影</a><hr>"
     return link
+
+@app.route("/searchmovie", methods=["GET", "POST"])
+def searchmovie():
+    if request.method == "POST":
+        # 抓取表單裡面 name="keyword" 的欄位當作關鍵字
+        keyword = request.values.get("keyword")
+        Result = f"<h2>查詢電影關鍵字：{keyword}</h2>"
+        
+        db = firestore.client()
+        collection_ref = db.collection("電影2B")
+        docs = collection_ref.get()
+        
+        found = False
+        
+        for doc in docs:
+            movie_data = doc.to_dict()
+            # 檢查關鍵字是否包含在片名中
+            if keyword in movie_data.get("title", ""): 
+                found = True
+                # 【修正這裡】：使用 doc.id 來取得 Firestore 的文件 ID 作為電影編號
+                Result += f"<b>編號：</b>{doc.id}<br>"
+                Result += f"<b>片名：</b>{movie_data.get('title', '未知')}<br>"
+                # 顯示海報圖片
+                Result += f"<b>海報：</b><br><img src='{movie_data.get('picture', '')}' style='width:150px;'><br>"
+                # 將介紹頁轉為可點擊的超連結
+                Result += f"<b>介紹頁：</b><a href='{movie_data.get('hyperlink', '#')}' target='_blank'>點我查看</a><br>"
+                Result += f"<b>上映日期：</b>{movie_data.get('showDate', '未知')}<br><hr>"
+        
+        if not found:
+            Result += "抱歉，查無此關鍵字之電影資料。<br>"
+
+        return Result + "<br><a href='/searchmovie'>重新查詢</a> | <a href='/'>回首頁</a>"
+        
+    else:
+        html="""
+        <h2>電影查詢</h2>
+        <form action="/searchmovie" method="POST">
+            請輸入電影片名關鍵字：
+            <input type="text" name="keyword" required>
+            <button type="submit">查詢</button>
+        </form>
+        <br><a href="/">回首頁</a>
+        """
+        # GET 請求時，顯示輸入表單
+        return html
 
 @app.route("/spidermovie")
 def spidermovie():
