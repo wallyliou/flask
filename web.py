@@ -64,7 +64,7 @@ def weather():
             # 檢查是否有回傳縣市資料
             if not json_data["records"]["location"]:
                 result = f"<h2>抱歉，找不到『{city}』的氣象資料。</h2>"
-                result += "<p>請確保輸入正確的縣市名稱（例如：臺中市、臺北、宜蘭縣）。</p>"
+                result += "<p>請確保輸入正確的縣市名稱（例如：臺中市、宜蘭縣）。</p>"
             else:
                 location = json_data["records"]["location"][0]
                 city_name = location["locationName"]
@@ -87,7 +87,7 @@ def weather():
         html = """
         <h2>氣象預報查詢</h2>
         <form action="/weather" method="POST">
-            請輸入查詢縣市 (如：臺中市、高雄)：
+            請輸入查詢縣市 (如：臺中市)：
             <input type="text" name="keyword" placeholder="例如：臺中市" required>
             <button type="submit">查詢</button>
         </form>
