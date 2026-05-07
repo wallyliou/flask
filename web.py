@@ -55,7 +55,7 @@ def road():
     #print(Data.text)
     JsonData = json.loads(Data.text)
     for item in JsonData:
-        Result+=item["路口名稱"]+",原因:"+item["主要肇因"]+"<br>"
+        Result+=item["路口名稱"]+",原因:"+item["主要肇因"]+",件數:"+item["總件數"]+"<br>"
         
     return Result
 
