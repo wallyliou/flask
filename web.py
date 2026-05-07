@@ -44,7 +44,57 @@ def index():
     link += "<a href=/spidermovie>讀取開眼電影即將上映影片，寫入Firestore</a><hr>"
     link += "<a href=/searchmovie>查詢資料庫符合電影</a><hr>"
     link += "<a href=/road>台中市十大肇事路口</a><hr>"
+    link += "<a href=/weather>查詢縣市顯示目前天氣及降雨機率</a><hr>"
     return link
+
+@app.route("/weather", methods=["GET", "POST"])
+def weather():
+    if request.method == "POST":
+        city = request.values.get("keyword")
+        # 處理台灣/臺灣字體統一問題
+        city = city.replace("台", "臺")
+        
+        # 氣象署 API URL (這裡使用你提供的 Authorization key)
+        url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=rdec-key-123-45678-011121314&format=JSON&locationName=" + city
+
+        try:
+            data = requests.get(url)
+            json_data = data.json()
+            
+            # 檢查是否有回傳縣市資料
+            if not json_data["records"]["location"]:
+                result = f"<h2>抱歉，找不到『{city}』的氣象資料。</h2>"
+                result += "<p>請確保輸入正確的縣市名稱（例如：臺中市、臺北、宜蘭縣）。</p>"
+            else:
+                location = json_data["records"]["location"][0]
+                city_name = location["locationName"]
+                
+                # 取得天氣狀態與降雨機率 (索引 0 為天氣現象, 索引 1 為降雨機率)
+                weather_info = location["weatherElement"][0]["time"][0]["parameter"]["parameterName"]
+                rain_chance = location["weatherElement"][1]["time"][0]["parameter"]["parameterName"]
+                
+                result = f"<h2>{city_name} 最新天氣預報</h2>"
+                result += f"<p style='font-size:1.2em;'>當前天氣狀況：<strong>{weather_info}</strong></p>"
+                result += f"<p style='font-size:1.2em;'>降雨機率：<strong>{rain_chance}%</strong></p>"
+        
+        except Exception as e:
+            result = f"<h2>連線發生錯誤</h2><p>{str(e)}</p>"
+
+        return result + "<br><a href='/weather'>重新查詢</a> | <a href='/'>回首頁</a>"
+        
+    else:
+        # GET 請求：顯示輸入框
+        html = """
+        <h2>氣象預報查詢</h2>
+        <form action="/weather" method="POST">
+            請輸入查詢縣市 (如：臺中市、高雄)：
+            <input type="text" name="keyword" placeholder="例如：臺中市" required>
+            <button type="submit">查詢</button>
+        </form>
+        <br><a href="/">回首頁</a>
+        """
+        return html
+
 
 @app.route("/road")
 def road():
