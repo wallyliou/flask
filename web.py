@@ -52,26 +52,38 @@ def index():
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    # build a request object
+    # 建立 request 物件
     req = request.get_json(force=True)
-    # fetch queryResult from json
-    action =  req["queryResult"]["action"]
-    #msg =  req["queryResult"]["queryText"]
-    #info = "我是劉宇崴設計的機器人，動作：" + action + "； 查詢內容：" + msg
+    
+    # 取得 Dialogflow 傳來的 action
+    action = req.get("queryResult", {}).get("action")
+    
+    # 設定一個預設的回覆內容，避免 action 不符時 info 變數未定義而報錯
+    info = "我是劉宇崴設計的機器人，目前無法辨識您的請求。"
 
-    if (action == "rateChoice"):
-        rate =  req["queryResult"]["parameters"]["rate"]
+    if action == "rateChoice":
+        rate = req["queryResult"]["parameters"]["rate"]
         info = "我是劉宇崴設計的機器人，您選擇的電影分級是：" + rate + "，相關電影：\n"
 
-    db = firestore.client()
+        # 資料庫查詢必須縮排在 if 條件式內部
+        db = firestore.client()
         collection_ref = db.collection("電影含分級")
         docs = collection_ref.get()
+        
         result = ""
         for doc in docs:
-            dict = doc.to_dict()
-            if rate in dict["rate"]:
-                result += "片名：" + dict["title"] + "\n"
-                #result += "介紹：" + dict["hyperlink"] + "\n\n"
+            # 避免使用 python 內建字詞 dict 當作變數名，改用 movie_data
+            movie_data = doc.to_dict()
+            
+            # 確保欄位存在再做比對，避免 KeyError
+            if "rate" in movie_data and rate in movie_data["rate"]:
+                result += "片名：" + movie_data.get("title", "未知片名") + "\n"
+                # result += "介紹：" + movie_data.get("hyperlink", "") + "\n\n"
+        
+        # 如果找不到相關電影，給予友善提示
+        if result == "":
+            result = "目前資料庫沒有這個分級的電影喔！\n"
+            
         info += result
 
     return make_response(jsonify({"fulfillmentText": info}))
