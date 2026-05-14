@@ -67,7 +67,7 @@ def webhook():
 
         # 資料庫查詢必須縮排在 if 條件式內部
         db = firestore.client()
-        collection_ref = db.collection("電影含分級")
+        collection_ref = db.collection("本週新片含分級")
         docs = collection_ref.get()
         
         result = ""
