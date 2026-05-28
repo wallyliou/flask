@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, make_response, jsonify
 from datetime import datetime
 
+from google import genai
+
 import os
 import json
 import firebase_admin
@@ -26,6 +28,11 @@ if not firebase_admin._apps:
 db = firestore.client()
 app = Flask(__name__)
 
+
+# 在全域（函式外面）建立 Client 物件，只初始化一次即可，不用每次初始化
+client = genai.Client()
+
+
 # --- 路由設定 ---
 
 @app.route("/")
@@ -49,7 +56,21 @@ def index():
     link += "<a href=/rate>本週新片進DB</a><hr>"
     link += "<a href=/webhook>本週新片機器人</a><hr>"
     link += "<a href=/webdemo>聊天機器人</a><hr>"
+    link += "<a href=/AI>ai聊天機器人</a><hr>"
     return link
+
+
+@app.route("/AI")
+def AI():
+    # 每次使用者拜訪該路徑時，直接使用全域的 client 呼叫模型
+    response = client.models.generate_content(
+        model='gemini-3.5-flash',
+        contents='我想查詢靜宜大學資管系的評價？',
+    )
+    
+    # 回傳生成的文字
+    return response.text
+
 
 @app.route("/webdemo")
 def webdemo():    
